@@ -1,0 +1,144 @@
+from cat.mad_hatter.decorators import hook
+from cat.log import log
+from cat.db import crud
+import json
+import requests
+import time
+from typing import Dict, List, Any, Optional, cast
+
+
+def normalize_url(base_url: str = "http://ollama:11434") -> str:
+    """Normalize the API URL format"""
+    base_url = base_url.rstrip('/')
+    if not base_url.startswith('http'):
+        base_url = f"http://{base_url}"
+    return base_url
+
+
+def check_model_exists(model: str, base_url: str = "http://ollama:11434") -> bool:
+    """Check if the specified Ollama model already exists"""
+    try:
+        base_url = normalize_url(base_url)
+        
+        # Get the list of installed models
+        response = requests.get(f"{base_url}/api/tags")
+        
+        if response.status_code != 200:
+            log.warning(f"Failed to get model list: {response.status_code}")
+            return False
+        
+        models_data: Dict[str, List[Dict[str, Any]]] = response.json()
+        installed_models: List[str] = [
+            cast(str, model_data.get('name')) 
+            for model_data in models_data.get('models', [])
+        ]
+        
+        # Check if our model is in the list
+        return model in installed_models
+        
+    except Exception as e:
+        log.error(f"Error checking if model exists: {e}")
+        return False
+
+
+def notify(message: str, cat: Optional[Any] = None) -> None:
+    """Helper function to log and send websocket messages"""
+    log.info(message)
+    if cat:
+        cat.send_ws_message(message)
+
+
+def pull_ollama_model(model: str, cat: Optional[Any] = None, base_url: str = "http://ollama:11434") -> bool:
+    """Pull the specified Ollama model if it doesn't exist"""
+    try:
+        base_url = normalize_url(base_url)
+        
+        # Check if model already exists
+        if check_model_exists(model, base_url):
+            log.info(f"Model {model} is already installed, skipping download")
+            return True
+            
+        # Send initial notification
+        notify(f"I'm downloading the {model} model... This might take a few minutes ⏳", cat)
+        
+        # Start the model pull request
+        response: requests.Response = requests.post(
+            f"{base_url}/api/pull",
+            json={"name": model},
+            stream=True,
+        )
+        
+        if response.status_code != 200:
+            raise Exception(f"Failed to pull model: {response.status_code}")
+        
+        time_last_notification: float = time.time()
+        
+        for line in response.iter_lines():
+            if not line:
+                continue
+                
+            try:
+                data: Dict[str, Any] = json.loads(line.decode('utf-8'))
+                status: str = data.get('status', '')
+
+                # Send notification every 5 seconds
+                if time.time() - time_last_notification > 5:
+                    if 'completed' in data and 'total' in data:
+                        percentage: float = (data['completed'] / data['total']) * 100
+                        message: str = f"Still downloading {model}... {percentage:.0f}% complete 📥"
+                    else:
+                        message: str = f"Still downloading {model}... 📥"
+                    
+                    notify(message, cat)
+                    time_last_notification = time.time()
+                
+                if status == "success":
+                    success_msg: str = f"Great! {model} is now ready to use! 🎉"
+                    notify(success_msg, cat)
+                    return True
+                    
+            except json.JSONDecodeError:
+                continue
+        
+        return True
+        
+    except Exception as e:
+        error_msg: str = f"Error pulling Ollama model '{model}': {e}"
+        log.error(error_msg)
+        if cat:
+            cat.send_ws_message(f"Sorry, I couldn't download the model: {e}")
+        return False
+
+
+@hook  # default priority = 1 
+def before_cat_reads_message(user_message_json: Dict[str, Any], cat: Any) -> Dict[str, Any]:
+    try:
+        # Get all settings at once
+        settings: Dict[str, Dict[str, Any]] = {s.get("name"): s for s in crud.get_settings()}
+        
+        # Check if Ollama is selected
+        llm_selected: Dict[str, Any] = settings.get("llm_selected", {})
+        ollama_config: Dict[str, Any] = settings.get("LLMOllamaConfig", {})
+        
+        if (llm_selected.get("value", {}).get("name") == "LLMOllamaConfig" and ollama_config):
+            # Extract model name and base URL
+            config_value: Dict[str, Any] = ollama_config.get("value", {})
+            model: Optional[str] = config_value.get("model")
+            
+            if model:
+                log.info(f"Detected Ollama configuration with model: {model}")
+                
+                # Get Ollama API URL from settings if available
+                ollama_url: str = config_value.get("base_url", "http://ollama:11434")
+                
+                # Pull the model
+                pull_ollama_model(model, cat, ollama_url)
+            else:
+                log.warning("Ollama configuration found but model name is missing")
+        else:
+            log.info("Non-Ollama LLM provider is selected or configuration is missing")
+    
+    except Exception as e:
+        log.error(f"Error in Ollama autopull plugin: {e}")
+    
+    return user_message_json

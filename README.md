@@ -1,26 +1,35 @@
-# My plugin
+# Claw The Ollama
+[![Claw the Ollama](https://custom-icon-badges.demolab.com/static/v1?label=&message=awesome+plugin&color=F4F4F5&style=for-the-badge&logo=cheshire_cat_black)](https://)
 
-[![awesome plugin](https://custom-icon-badges.demolab.com/static/v1?label=&message=awesome+plugin&color=383938&style=for-the-badge&logo=cheshire_cat_ai)](https://)  
-[![Awesome plugin](https://custom-icon-badges.demolab.com/static/v1?label=&message=Awesome+plugin&color=000000&style=for-the-badge&logo=cheshire_cat_ai)](https://)  
-[![awesome plugin](https://custom-icon-badges.demolab.com/static/v1?label=&message=awesome+plugin&color=F4F4F5&style=for-the-badge&logo=cheshire_cat_black)](https://)
 
-Write here all the useful information about your plugin.
+Automatically pulls missing Ollama models for Cheshire Cat AI.
 
-This repository is the template to automate the release of official Cheshire Cat AI plugins. 
+## Description
+
+**Claw The Ollama** is a plugin for Cheshire Cat AI that ensures any Ollama model you request is available. If you set Ollama as your LLM provider and request a model that isn't installed, the cat will automatically pull it for you (with its claws).
+
+## Features
+- Detects when a requested Ollama model is missing
+- Automatically pulls the model from Ollama
+- Seamless integration with Cheshire Cat AI
+
+## Installation
+
+1. Place this folder inside your Cat's `plugins` directory.
+2. Enable "Claw The Ollama" in the Cheshire Cat AI Plugins page.
 
 ## Usage
 
-1. Create a new repository clicking on the `Use this template` button.
-2. Clone your new repo directly in the Cat's `plugins` folder.
-3. Run the `setup.py` script:
-```bash
-python setup.py
-```
-The script will prompt you to write the name of your plugin and make an initial setup setting the name in the files.
+Just use Cheshire Cat AI as usual with Ollama as your LLM provider. If you request a model that isn't present, the plugin will fetch it automatically when you send the first message.
 
-4. Start developing!
+## Requirements
+- Cheshire Cat AI
+- Ollama running and accessible
 
-> **Important**
-> A new release of your plugin is triggered every time you set a new `version` in the `plugin.json` file.
-> Please, remember to set it correctly every time you want to release an update.
+## Configuration
+No configuration is needed.
+
+---
+Author: Davide Modolo  
+LinkedIn: https://www.linkedin.com/in/davide-modolo/
 
