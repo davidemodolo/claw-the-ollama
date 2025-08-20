@@ -1,8 +1,15 @@
-# Claw The Ollama
+<p align="center">
+    <img src="claw_the_ollama.png" alt="Claw The Ollama Logo" width="50" style="border-radius: 50%; vertical-align: middle; margin-right: 10px;" />
+    <span style="font-size:2em; vertical-align: middle;"><b>Claw The Ollama</b></span>
+</p>
+
 [![Claw the Ollama](https://custom-icon-badges.demolab.com/static/v1?label=&message=awesome+plugin&color=F4F4F5&style=for-the-badge&logo=cheshire_cat_black)](https://)
 
+Automatically pull missing Ollama models for Cheshire Cat AI!
 
-Automatically pulls missing Ollama models for Cheshire Cat AI.
+<p align="center">
+    <img src="example.gif" alt="Claw The Ollama Example" width="600" />
+</p>
 
 ## Description
 
@@ -20,7 +27,7 @@ Automatically pulls missing Ollama models for Cheshire Cat AI.
 
 ## Usage
 
-Just use Cheshire Cat AI as usual with Ollama as your LLM provider. If you request a model that isn't present, the plugin will fetch it automatically when you send the first message.
+Just use Cheshire Cat AI as usual with Ollama as your LLM provider. If you request a model that isn't present, the plugin will fetch it automatically when you send a message.
 
 ## Requirements
 - Cheshire Cat AI
