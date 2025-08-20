@@ -5,6 +5,7 @@ import json
 import requests
 import time
 from typing import Dict, List, Any, Optional, cast
+from core.cat.looking_glass.stray_cat import StrayCat
 
 
 def normalize_url(base_url: str = "http://ollama:11434") -> str:
@@ -41,14 +42,14 @@ def check_model_exists(model: str, base_url: str = "http://ollama:11434") -> boo
         return False
 
 
-def notify(message: str, cat: Optional[Any] = None) -> None:
+def notify(message: str, cat: Optional["StrayCat"] = None) -> None:
     """Helper function to log and send websocket messages"""
     log.info(message)
     if cat:
         cat.send_ws_message(message)
 
 
-def pull_ollama_model(model: str, cat: Optional[Any] = None, base_url: str = "http://ollama:11434") -> bool:
+def pull_ollama_model(model: str, cat: Optional["StrayCat"] = None, base_url: str = "http://ollama:11434") -> bool:
     """Pull the specified Ollama model if it doesn't exist"""
     try:
         base_url = normalize_url(base_url)
@@ -111,7 +112,7 @@ def pull_ollama_model(model: str, cat: Optional[Any] = None, base_url: str = "ht
 
 
 @hook  # default priority = 1 
-def before_cat_reads_message(user_message_json: Dict[str, Any], cat: Any) -> Dict[str, Any]:
+def before_cat_reads_message(user_message_json: Dict[str, Any], cat: "StrayCat") -> Dict[str, Any]:
     try:
         # Get all settings at once
         settings: Dict[str, Dict[str, Any]] = {s.get("name"): s for s in crud.get_settings()}
