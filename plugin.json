@@ -1,10 +1,10 @@
 {
     "name": "Claw The Ollama",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "description": "If Ollama is set as LLM provider with a model that is not installed, the cat will automatically pull it (with its claws).\nIt also pulls any (embedding) model when:\n 1.its settings are saved with a new parameter\n 2.the cat starts, it is configured to use Ollama as Embedding provider but the model is not installed",
     "author_name": "Davide Modolo",
     "author_url": "https://www.linkedin.com/in/davide-modolo/",
     "plugin_url": "https://github.com/davidemodolo/claw_the_ollama",
-    "tags": "ollama, embeddings, ",
+    "tags": "ollama, embeddings, models",
     "thumb": "https://raw.githubusercontent.com/davidemodolo/claw-the-ollama/main/claw_the_ollama.png"
 }

@@ -6,10 +6,10 @@ from cat.mad_hatter.decorators import plugin
 class ClawSettings(BaseModel):
     """Settings for the Claw-the-Ollama plugin."""
     
-    embedding_model: str = Field(
-        default="all-MiniLM-L6-v2",
-        title="Embedding Model",
-        description="The name of the Ollama embedding model to download and use. This model will be automatically downloaded when settings are saved."
+    ollama_model: str = Field(
+        default="nomic-embed-text:v1.5",
+        title="Ollama Model",
+        description="The name of the Ollama model to download. This model will be automatically downloaded when settings are saved."
     )
     
     base_url: str = Field(

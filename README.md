@@ -20,21 +20,25 @@ Automatically pull missing Ollama models for Cheshire Cat AI!
 - Automatically pulls the model from Ollama
 - Seamless integration with Cheshire Cat AI
 
-## Installation
-
-1. Place this folder inside your Cat's `plugins` directory.
-2. Enable "Claw The Ollama" in the Cheshire Cat AI Plugins page.
-
 ## Usage
 
-Just use Cheshire Cat AI as usual with Ollama as your LLM provider. If you request a model that isn't present, the plugin will fetch it automatically when you send a message.
+Just use Cheshire Cat AI as usual with Ollama as your LLM provider. If you request a model that isn't present, the plugin will pull it automatically when you send a message.
+
+Not only, you can now download any model from Ollama from the settings in the plugin; it will be downloaded when the settings are saved.
+
+Not only that, if the saved configuration has Ollama set as Embeddings provider, but the model is not downloaded, instead of crashing the Cat it will pull the model automatically.
+
+> unfortunately , in the last two cases, there will be no notification in the UI, only in the logging.
 
 ## Requirements
 - Cheshire Cat AI
 - Ollama running and accessible
+- Claw the Ollama plugin enabled in Cheshire Cat AI
 
-## Configuration
-No configuration is needed.
+## Settings
+
+- `base_url`: The base URL for the Ollama API (default: `http://ollama:11434`)
+- `ollama_model`: The name of the Ollama model to pull when the settings are saved
 
 ---
 Author: Davide Modolo  

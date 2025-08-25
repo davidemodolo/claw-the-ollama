@@ -1,6 +1,4 @@
-from cat.mad_hatter.decorators import hook
-from cat.mad_hatter.decorators import plugin
-
+from cat.mad_hatter.decorators import hook, plugin
 from cat.log import log
 from cat.db import crud
 import json
@@ -11,8 +9,17 @@ import threading
 from typing import Dict, List, Any, Optional, cast
 from cat.looking_glass.stray_cat import StrayCat
 
+# Constants
+OLLAMA_DEFAULT_BASE_URL: str = "http://ollama:11434"
+NOTIFICATION_INTERVAL = 5  # seconds
 
-def normalize_url(base_url: str = "http://ollama:11434") -> str:
+# These are used to find a specific setting inside the returned json from crud.get_settings()
+LLM_CONFIG_KEY = "LLMOllamaConfig" 
+EMBEDDER_CONFIG_KEY = "EmbedderOllamaConfig"
+LLM_SELECTION_KEY = "llm_selected"
+EMBEDDER_SELECTION_KEY = "embedder_selected"
+
+def normalize_url(base_url: str = OLLAMA_DEFAULT_BASE_URL) -> str:
     """Normalize the API URL format"""
     base_url = base_url.rstrip('/')
     if not base_url.startswith('http'):
@@ -20,7 +27,7 @@ def normalize_url(base_url: str = "http://ollama:11434") -> str:
     return base_url
 
 
-def check_model_exists(model: str, base_url: str = "http://ollama:11434") -> bool:
+def check_model_exists(model: str, base_url: str = OLLAMA_DEFAULT_BASE_URL) -> bool:
     """Check if the specified Ollama model already exists"""
     try:
         base_url = normalize_url(base_url)
@@ -32,10 +39,11 @@ def check_model_exists(model: str, base_url: str = "http://ollama:11434") -> boo
             log.warning(f"Failed to get model list: {response.status_code}")
             return False
         
-        models_data: Dict[str, List[Dict[str, Any]]] = response.json()
-        installed_models: List[str] = [
-            cast(str, model_data.get('name')) 
+        models_data = response.json()
+        installed_models = [
+            model_data.get('name') 
             for model_data in models_data.get('models', [])
+            if model_data.get('name')
         ]
         
         # Check if our model is in the list
@@ -53,7 +61,7 @@ def notify(message: str, cat: Optional[StrayCat] = None) -> None:
         cat.send_ws_message(message)
 
 
-def pull_ollama_model(model: str, cat: Optional[StrayCat] = None, base_url: str = "http://ollama:11434") -> bool:
+def pull_ollama_model(model: str, cat: Optional[StrayCat] = None, base_url: str = OLLAMA_DEFAULT_BASE_URL) -> bool:
     """Pull the specified Ollama model if it doesn't exist"""
     try:
         base_url = normalize_url(base_url)
@@ -86,8 +94,8 @@ def pull_ollama_model(model: str, cat: Optional[StrayCat] = None, base_url: str 
                 data: Dict[str, Any] = json.loads(line.decode('utf-8'))
                 status: str = data.get('status', '')
 
-                # Send notification every 5 seconds
-                if time.time() - time_last_notification > 5:
+                # Send notification every NOTIFICATION_INTERVAL seconds
+                if time.time() - time_last_notification > NOTIFICATION_INTERVAL:
                     if 'completed' in data and 'total' in data:
                         percentage: float = (data['completed'] / data['total']) * 100
                         message: str = f"Still downloading {model}... {percentage:.0f}% complete 📥"
@@ -165,7 +173,7 @@ def save_settings(settings: Dict):
         embedding_model = settings.get("embedding_model")
         if embedding_model:
             # Get base_url from settings, default to standard Ollama URL
-            base_url = settings.get("base_url", "http://ollama:11434")
+            base_url = settings.get("base_url", OLLAMA_DEFAULT_BASE_URL)
             log.info(f"Scheduling background download for model: {embedding_model} from {base_url}")
             
             # Run model download in background thread to avoid blocking the settings save
@@ -192,16 +200,21 @@ def save_settings(settings: Dict):
     plugin_path = os.path.dirname(os.path.abspath(__file__))
     return save_plugin_settings_to_file(settings, plugin_path)
 
-@hook  # default priority = 1 
-def before_cat_reads_message(user_message_json: Dict[str, Any], cat: StrayCat) -> Dict[str, Any]:
+def extract_and_pull_ollama_model(selection_key: str, config_key: str, cat: Optional[StrayCat] = None):
+    """
+    Extract Ollama configuration and pull model if configured.
+    
+    Args:
+        selection_key: Key for the selected provider (e.g., "llm_selected")
+        config_key: Key for the Ollama config (e.g., "LLMOllamaConfig")
+        cat: Optional StrayCat instance for websocket messages
+    """
     try:
-        # Get all settings at once
         settings: Dict[str, Dict[str, Any]] = {s.get("name"): s for s in crud.get_settings()}
-        # Check if Ollama is selected
-        llm_selected: Dict[str, Any] = settings.get("llm_selected", {})
-        ollama_config: Dict[str, Any] = settings.get("LLMOllamaConfig", {})
+        selected_provider: Dict[str, Any] = settings.get(selection_key, {})
+        ollama_config: Dict[str, Any] = settings.get(config_key, {})
         
-        if (llm_selected.get("value", {}).get("name") == "LLMOllamaConfig" and ollama_config):
+        if (selected_provider.get("value", {}).get("name") == config_key and ollama_config):
             # Extract model name and base URL
             config_value: Dict[str, Any] = ollama_config.get("value", {})
             model: Optional[str] = config_value.get("model")
@@ -210,47 +223,24 @@ def before_cat_reads_message(user_message_json: Dict[str, Any], cat: StrayCat) -
                 log.info(f"Detected Ollama configuration with model: {model}")
                 
                 # Get Ollama API URL from settings if available
-                ollama_url: str = config_value.get("base_url", "http://ollama:11434")
-                
+                ollama_url: str = config_value.get("base_url", OLLAMA_DEFAULT_BASE_URL)
+
                 # Pull the model
                 pull_ollama_model(model, cat, ollama_url)
             else:
                 log.warning("Ollama configuration found but model name is missing")
         else:
-            log.info("Non-Ollama LLM provider is selected or configuration is missing")
+            log.info("Non-Ollama provider is selected or configuration is missing")
     
     except Exception as e:
-        log.error(f"Error in Ollama autopull plugin: {e}")
-    
+        log.error(f"Error in Ollama autopull for {config_key}: {e}")
+
+
+@hook  # default priority = 1 
+def before_cat_reads_message(user_message_json: Dict[str, Any], cat: StrayCat) -> Dict[str, Any]:
+    extract_and_pull_ollama_model(LLM_SELECTION_KEY, LLM_CONFIG_KEY, cat)    
     return user_message_json
 
 @hook
 def before_cat_bootstrap(cat: StrayCat) -> None:
-    try:
-        # Get all settings at once
-        settings: Dict[str, Dict[str, Any]] = {s.get("name"): s for s in crud.get_settings()}
-        
-        # Check embedder configuration
-        embedder_selected: Dict[str, Any] = settings.get("embedder_selected", {})
-        embedder_config: Dict[str, Any] = settings.get("EmbedderOllamaConfig", {})
-        
-        if (embedder_selected.get("value", {}).get("name") == "EmbedderOllamaConfig" and embedder_config):
-            # Extract model name and base URL
-            config_value: Dict[str, Any] = embedder_config.get("value", {})
-            model: Optional[str] = config_value.get("model")
-            
-            if model:
-                log.info(f"Detected Ollama embedder configuration with model: {model}")
-                
-                # Get Ollama API URL from settings if available
-                ollama_url: str = config_value.get("base_url", "http://ollama:11434")
-                
-                # Pull the model (without websocket messages since UI isn't ready)
-                pull_ollama_model(model, None, ollama_url)
-            else:
-                log.warning("Ollama embedder configuration found but model name is missing")
-        else:
-            log.info("Non-Ollama embedder provider is selected or configuration is missing")
-    
-    except Exception as e:
-        log.error(f"Error in Ollama embedder autopull during bootstrap: {e}")
+    extract_and_pull_ollama_model(EMBEDDER_SELECTION_KEY, EMBEDDER_CONFIG_KEY)
