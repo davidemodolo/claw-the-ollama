@@ -170,29 +170,29 @@ def save_settings(settings: Dict):
     
     # Try to pull the model if it's specified in settings
     try:
-        embedding_model = settings.get("embedding_model")
-        if embedding_model:
+        ollama_model = settings.get("ollama_model")
+        if ollama_model:
             # Get base_url from settings, default to standard Ollama URL
             base_url = settings.get("base_url", OLLAMA_DEFAULT_BASE_URL)
-            log.info(f"Scheduling background download for model: {embedding_model} from {base_url}")
-            
+            log.info(f"Scheduling background download for model: {ollama_model} from {base_url}")
+
             # Run model download in background thread to avoid blocking the settings save
             def download_model_async():
                 try:
-                    success = pull_ollama_model(embedding_model, None, base_url)
+                    success = pull_ollama_model(ollama_model, None, base_url)
                     if success:
-                        log.info(f"Background download completed for model: {embedding_model}")
+                        log.info(f"Background download completed for model: {ollama_model}")
                     else:
-                        log.warning(f"Background download failed for model: {embedding_model}")
+                        log.warning(f"Background download failed for model: {ollama_model}")
                 except Exception as e:
                     log.error(f"Error in background model download: {e}")
             
             # Start the download in a daemon thread
             download_thread = threading.Thread(target=download_model_async, daemon=True)
             download_thread.start()
-            log.info(f"Background download thread started for model: {embedding_model}")
+            log.info(f"Background download thread started for model: {ollama_model}")
         else:
-            log.info("No embedding_model specified in settings")
+            log.info("No ollama_model specified in settings")
     except Exception as e:
         log.error(f"Error trying to schedule model download during settings save: {e}")
 

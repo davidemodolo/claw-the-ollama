@@ -7,7 +7,7 @@ class ClawSettings(BaseModel):
     """Settings for the Claw-the-Ollama plugin."""
     
     ollama_model: str = Field(
-        default="nomic-embed-text:v1.5",
+        default="",
         title="Ollama Model",
         description="The name of the Ollama model to download. This model will be automatically downloaded when settings are saved."
     )
