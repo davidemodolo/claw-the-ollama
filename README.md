@@ -27,7 +27,7 @@ Just use Cheshire Cat AI as usual with Ollama as your LLM provider. If you reque
 
 Not only, you can now download any model from Ollama from the settings in the plugin; it will be downloaded when the settings are saved.
 
-Not only that, if the saved configuration has Ollama set as Embeddings provider, but the model is not downloaded, instead of crashing the Cat it will pull the model automatically during bootstrap.
+Not only that, if the saved configuration has Ollama set as Embeddings provider, but the model is not downloaded, instead of crashing the Cat, the model will be pulled automatically during bootstrap.
 
 > unfortunately , in the last two cases, there will be no notification in the UI, only logging.
 
