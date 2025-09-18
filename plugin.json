@@ -4,7 +4,7 @@
     "description": "Automatically pull missing models: download LLM models when Ollama is selected as provider, embedding models at startup and any model when saving settings.",
     "author_name": "Davide Modolo",
     "author_url": "https://www.linkedin.com/in/davide-modolo/",
-    "plugin_url": "https://github.com/davidemodolo/claw_the_ollama",
+    "plugin_url": "https://github.com/davidemodolo/claw-the-ollama",
     "tags": "ollama, embeddings, models",
     "thumb": "https://raw.githubusercontent.com/davidemodolo/claw-the-ollama/main/claw_the_ollama.png"
 }
